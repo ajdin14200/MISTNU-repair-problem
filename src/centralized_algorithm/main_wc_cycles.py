@@ -1,6 +1,8 @@
 
-import os.path
-from wc_checking_algorithm import *
+import sys
+sys.path.append("../checking_algorithm")
+
+import wc_checking_algorithm
 
 from pysmt.shortcuts import *
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
