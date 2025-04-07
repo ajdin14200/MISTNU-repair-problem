@@ -1,2 +1,3 @@
-# Multi-agent Interdependent Simple Temporal Networks under Uncertainty (MISTNU): the repair problem
+# Multi-agent Interdependent Simple Temporal Networks under Uncertainty (MISTNU): The repair problem
 
+Multi-agent Interdependent Simple Temporal Networks under Uncertainty is an extension of STNU to a multi-agent scenario where the duration of some constraints are decided by one agent but may be observed by many and hence is a contingent constraint according to the STNU model. Therefore, we are faced with a multi-agent scenario in which some contingent constraints may be negotiable, i.e., it is possible to reduce the interval of possible duration. The MISTNU model represents such constraints as contracts. Please refer to the original paper for more information about MISTNU (
