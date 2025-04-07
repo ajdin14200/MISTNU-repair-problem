@@ -222,7 +222,7 @@ def max_bounds(mas, solver_name="z3", controllability="weak", use_secondary=Fals
 
         formula, x = encode_on_bounds(problem, bounds, agent, controllability=controllability,use_secondary=False)
         print(formula.serialize())
-        print("**********")
+        print("**************")
         problems_formulae.append(formula)
 
     if use_secondary:
