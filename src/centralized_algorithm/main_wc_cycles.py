@@ -1,13 +1,13 @@
 
-import sys
-sys.path.append("../checking_algorithm")
-
-import wc_checking_algorithm
-
 from pysmt.shortcuts import *
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
 
+import sys
+sys.path.insert(0, '..')
 from structures import *
+
+sys.path.append('checking_algorithm')
+from wc_checking_algorithm import *
 
 
 def diff(name):
@@ -173,9 +173,10 @@ def create_contracts_variables(B):
 def get_variables_formula(B, variables, contract_variables):
 
     variables_formula = []
+    print(variables)
+    print(contract_variables)
     for label, bounds in B.items():
 
-        variable_formula = []
         for i, (L, U) in enumerate(bounds):
             LB = contract_variables[label][i][0]
             UB = contract_variables[label][i][1]
@@ -188,7 +189,7 @@ def get_variables_formula(B, variables, contract_variables):
 
             else:
 
-                if LB in variable_formula:
+                if LB in variables:
                     bounds_formula.append(GE(LB, Real(L)))
                     bounds_formula.append(GE(Real(U), LB))
                     bounds_formula.append(Equals(UB, Real(U)))
@@ -198,8 +199,7 @@ def get_variables_formula(B, variables, contract_variables):
                     bounds_formula.append(GE(Real(U), UB))
                     bounds_formula.append(Equals(LB,Real(L)))
 
-            variable_formula.append(And(bounds_formula))
-        variables_formula.append(Or(variable_formula))
+            variables_formula.append(And(bounds_formula))
     return And(variables_formula)
 
 # This function is the optimization function that minimizes the reduction of the bounds of the contracts
@@ -211,6 +211,7 @@ def primary_objective(original_bounds, bounds):
             L, U = original_bounds[n][i]
             s.append(Plus(Minus(Real(U), u), Minus(l, Real(L))))
     return Plus(s)
+
 
 # This function is the optimization function that maximizes the number of contracts that are reduce by the same amount
 def encode_secondary_objective(original_bounds, bounds):
@@ -228,60 +229,13 @@ def encode_secondary_objective(original_bounds, bounds):
     return And(perc_constraints), ps
 
 # This function is the centralized algorithm that repairs all the negative cycles using z3 as a solver
-def repair_cycle(mas, solver='z3', use_secondary= False):
-    agent_cycles, map_contracts = compute_controllability(mas)  # I get all the inconsistent cycles
-    contract_variables = create_contracts_variables(mas.B) # I create a variable for each bound of each contract
-    all_cycles_formula, variables = get_agents_formulas(agent_cycles, map_contracts, contract_variables) # I encode all the inconsistent cycle
-    variables_formula = get_variables_formula(mas.B, variables, contract_variables) # I encode the variables
-
-    P = [] # only used for fairness
-    if use_secondary:
-        p_formula, P = encode_secondary_objective(mas.B, contract_variables)
-        formula = And(all_cycles_formula, And(variables_formula, p_formula))
-    else:
-        formula = And(all_cycles_formula, variables_formula)
-
-    objective = primary_objective(mas.B, contract_variables)
-    obj1 = MinimizationGoal(objective)
-
-    if use_secondary:
-        #print("P ", P)
-        tot = []
-        if len(P) > 1:
-            for p1 in P:
-                for p2 in P:
-                    if p1 != p2:
-                        tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
-            obj2 = MaximizationGoal(Plus(tot))
-
-    with Optimizer(name=solver) as opt:
-        opt.add_assertion(formula)
-        if (not use_secondary) or len(P) == 1:
-            result = opt.optimize(obj1)
-        else:
-            result = opt.lexicographic_optimize([obj1, obj2])
-
-        if result is None:
-            return False, None, None, None
-        else:
-            model, cost = result
-
-            res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in contract_variables.items()}
-
-            p_res = {}
-            if use_secondary:
-                p_res = {n: model.get_py_value(p(n)) for n in contract_variables}
-
-
-            return True, res, p_res, mas.B
-
-
 
 def repair_cycle(mas, agent_cycles, map_contracts , solver='z3', use_secondary= False):
 
     contract_variables = create_contracts_variables(mas.B) # I create a variable for each bound of each contract
     all_cycles_formula, variables = get_agents_formulas(agent_cycles, map_contracts, contract_variables) # I encode all the inconsistent cycle
     variables_formula = get_variables_formula(mas.B, variables, contract_variables) # I encode the variables
+    print(variables_formula)
 
     P = [] # only used for fairness
     if use_secondary:
@@ -290,12 +244,11 @@ def repair_cycle(mas, agent_cycles, map_contracts , solver='z3', use_secondary= 
     else:
         formula = And(all_cycles_formula, variables_formula)
 
-    #print(formula.serialize())
     objective = primary_objective(mas.B, contract_variables)
     obj1 = MinimizationGoal(objective)
+    print(formula.serialize())
 
     if use_secondary:
-        #print("P ", P)
         tot = []
         if len(P) > 1:
             for p1 in P:
@@ -312,14 +265,11 @@ def repair_cycle(mas, agent_cycles, map_contracts , solver='z3', use_secondary= 
             result = opt.lexicographic_optimize([obj1, obj2])
 
         if result is None:
-            return False, None, None, None
+            raise RuntimeError("The problem is not repairable!")
+            return False, None, None, None # used for testing all benchmark
+
         else:
             model, cost = result
-
-            #print(f"cost: {cost}")
-            #print(f"model: {model}")
-            #print("")
-            #print('a solution exist to the repair problem of this MISTNU')
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in contract_variables.items()}
 
             p_res = {}
@@ -333,44 +283,6 @@ def repair_cycle(mas, agent_cycles, map_contracts , solver='z3', use_secondary= 
 
 
 
-
-
-
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Encoder for controllability of temporal problems')
-
-
-    parser.add_argument('inputFile', metavar='inputFile', type=str, help='The probmem to encode')
-    parser.add_argument('--fairness', '-f', action="store_true")
-    args = parser.parse_args()
-
-
-    mas = MAS()
-    mas.fromFile(args.inputFile)
-
-    print('looking for cycles')
-    start_time = time.time()
-    agent_cycles, map_contracts = compute_controllability(mas)  # I get all the inconsistent cycles
-    end_time = time.time()
-    print('repairing cycles')
-    print('time to find cycles : ', end_time-start_time)
-
-    res_bool, res, p_res, original_bounds = repair_cycle(mas, agent_cycles, map_contracts, args.solver, use_secondary=args.fairness)  # get the projection for a negative cycle
-
-    print("Repaired bounds:")
-
-    for n, lst in res.items():
-        for i, (l, u) in enumerate(lst):
-            print(
-                f"  {n}: original bounds -> {original_bounds[n][i]} new bounds -> [{l}, {u}] (~= [{float(l):.2f}, {float(u):.2f}])")
-    print("")
-
-    if args.fairness:
-        print("Percentages:")
-        for n, v in p_res.items():
-            print(f"  p of {n}: {v} (~= {float(v):.2f})")
 
 
 

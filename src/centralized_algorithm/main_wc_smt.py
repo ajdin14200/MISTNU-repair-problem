@@ -138,8 +138,6 @@ def my_product(bounds):
 
 def primary_objective(original_bounds, bounds):
     s = []
-    print("bounds ", bounds)
-    print(original_bounds)
     for n, lst in bounds.items():
         for i, (l, u) in enumerate(lst):
             L, U = original_bounds[n][i]
@@ -161,7 +159,6 @@ def encode_bound_constraints(original_bounds, bounds):
 
 def encode_secondary_objective(original_bounds, bounds):
     perc_constraints = []
-    # Add "Swedish" fairness constraints to the formula
     ps = []
     for name, lst in bounds.items():
         assert len(lst) == 1, "Disjunctive contingent are not supported yet"
@@ -169,41 +166,14 @@ def encode_secondary_objective(original_bounds, bounds):
         ps.append(p(name))
         orig_L, orig_U = original_bounds[name][0]
         perc_formula = Div(Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U)), Real(orig_U - orig_L))
-        not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
         p_formula = Equals(p(name), perc_formula)
-        print("p ", p_formula.serialize())
         perc_constraints.append(p_formula)
         perc_constraints.append(GE(p(name), Real(0)))
     return And(perc_constraints), ps
 
 
-def encode_quantified(problem, controllability="weak", solver_name="z3", use_secondary=False):
-    gamma, y, uncontrollable_formulae, bounds, original_bounds, xp = encode_gamma(problem)
-    psi, x = encode_psi(problem, uncontrollable_formulae, xp)
 
-    if controllability == "weak":  # if I check weak controllability
-        alpha = Exists(x, psi)
-        beta = ForAll(y.values(), Implies(gamma, alpha))
-
-    else:
-        alpha = ForAll(y.values(), Implies(gamma, psi))
-        # beta = Exists(x, alpha)
-        beta = alpha
-
-    optimization_obj = primary_objective(original_bounds, bounds)
-
-    formula = qelim(beta, solver_name=solver_name)
-    formula = And(formula, And(encode_bound_constraints(original_bounds, bounds)))
-
-    ps = None
-    if use_secondary:
-        perc_constraints, ps = encode_secondary_objective(original_bounds, bounds)
-        formula = And(formula, And(perc_constraints))
-
-    return formula, optimization_obj, ps, bounds, original_bounds
-
-
-def encode_on_bounds(problem, bounds, original_bounds, agent, controllability="weak", use_secondary=False):
+def encode_on_bounds(problem, bounds, agent, controllability="weak", use_secondary=False):
     gamma, contingents, y, uncontrollable_formulae, xp = encode_gamma(problem, bounds, agent)
     psi, x = encode_psi(problem, uncontrollable_formulae, xp, bounds, agent)
 
@@ -240,33 +210,30 @@ def owned_contract_as_contingent(problem):
             constraint.contingent = True
 
 
-def max_bounds(mas, solver_name="z3", controllability="weak", type="onbounds", use_secondary=False):
+def max_bounds(mas, solver_name="z3", controllability="weak", use_secondary=False):
     contract_formula, bounds = encode_process(mas.B)
-    p_formula = True
     P = []
 
     problems_formulae = []
     for agent, problem in zip(mas.agents, mas.problems):
-        if controllability == "weak":
-            owned_contract_as_contingent(problem)  # I transform all contract as contingent for checking WC
 
-        if type == "onbounds":
-            formula, x = encode_on_bounds(problem, bounds, mas.B, agent, controllability=controllability,
-                                          use_secondary=False)
-        else:
-            formula, bounds, original_bounds = encode_quantified(mas, controllability=controllability, solver_name="z3")
+        owned_contract_as_contingent(problem)  # I transform all contract as contingent for checking WC
+
+
+        formula, x = encode_on_bounds(problem, bounds, agent, controllability=controllability,use_secondary=False)
+        print(formula.serialize())
+        print("**********")
         problems_formulae.append(formula)
 
     if use_secondary:
         p_formula, P = encode_secondary_objective(mas.B, bounds)
-        formula = And(problems_formulae + [contract_formula] + [p_formula])
+        final_formula = And(problems_formulae + [contract_formula] + [p_formula])
     else:
-        formula = And(problems_formulae + [contract_formula])
+        final_formula = And(problems_formulae + [contract_formula])
+        print(formula.serialize())
 
-    print(formula.serialize())
     objective = primary_objective(mas.B, bounds)
     obj1 = MinimizationGoal(objective)
-    print("P ", P)
 
     if use_secondary:
         tot = []
@@ -278,7 +245,7 @@ def max_bounds(mas, solver_name="z3", controllability="weak", type="onbounds", u
             obj2 = MaximizationGoal(Plus(tot))
 
     with Optimizer(name=solver_name) as opt:
-        opt.add_assertion(formula)
+        opt.add_assertion(final_formula)
         if (not use_secondary) or len(P) == 1:
             result = opt.optimize(obj1)
         else:
@@ -286,59 +253,15 @@ def max_bounds(mas, solver_name="z3", controllability="weak", type="onbounds", u
 
         if result is None:
             raise RuntimeError("The problem is not repairable!")
+            return False, None, None, None  # used for testing all benchmark
+
         else:
             model, cost = result
 
-            print(f"cost: {cost}")
-            print(f"model: {model}")
-            print("")
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in bounds.items()}
 
             p_res = {}
             if use_secondary:
                 p_res = {n: model.get_py_value(p(n)) for n in bounds}
 
-            if controllability == "strong" and type == "bound":
-                print("Consistent Schedule:")
-                for n in x:
-                    print(f"  {n}: {model.get_py_value(n)} ")
-                print("")
-
-            return res, p_res, mas.B
-
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Encoder for controllability of temporal problems')
-
-    parser.add_argument('controllability', metavar='controllability', type=str, choices=["weak"],
-                        help='which type of controllability to check')
-    parser.add_argument('type', metavar='type', type=str, choices=["onbounds", "quantified"],
-                        help='which type of algorithm to use')
-    parser.add_argument('inputFile', metavar='inputFile', type=str, help='The problem to encode')
-    parser.add_argument('--solver', '-s', type=str, help='Which solver to use', default=None)
-    parser.add_argument('--qelim', '-q', type=str, help='Which qelim to use', default=None)
-    parser.add_argument('--fairness', '-f', action="store_true")
-    args = parser.parse_args()
-
-    # Main script
-    mas = MAS()
-    mas.fromFile(args.inputFile)
-    print(mas.B)
-
-    res, p_res, original_bounds = max_bounds(mas, args.solver,
-                                             controllability=args.controllability,
-                                             type=args.type,
-                                             use_secondary=args.fairness)  # get the projection for a negative cycle
-
-    print("Repaired bounds:")
-    for n, lst in res.items():
-        for i, (l, u) in enumerate(lst):
-            print(
-                f"  {n}: original bounds -> {original_bounds[n][i]} new bounds -> [{l}, {u}] (~= [{float(l):.2f}, {float(u):.2f}])")
-    print("")
-
-    if args.fairness:
-        print("Percentages:")
-        for n, v in p_res.items():
-            print(f"  p of {n}: {v} (~= {float(v):.2f})")
+            return True,res, p_res, mas.B
