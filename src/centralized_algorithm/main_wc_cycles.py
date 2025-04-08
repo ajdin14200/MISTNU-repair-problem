@@ -207,7 +207,7 @@ def primary_objective(original_bounds, bounds):
     s = []
 
     for n, lst in bounds.items():
-        for i, (l, u) in enumerate(lst):
+        for i, (l, u) in enumerate(lst):  # We assume a list of bounds for future research that will adapt the case of DTNU
             L, U = original_bounds[n][i]
             s.append(Plus(Minus(Real(U), u), Minus(l, Real(L))))
     return Plus(s)
@@ -230,7 +230,7 @@ def encode_secondary_objective(original_bounds, bounds):
 
 # This function is the centralized algorithm that repairs all the negative cycles using z3 as a solver
 
-def repair_cycle(mas, agent_cycles, map_contracts , solver='z3', use_secondary= False):
+def repair_cycle(mas, agent_cycles, map_contracts , SMT_solver, use_secondary= False):
 
     contract_variables = create_contracts_variables(mas.B) # I create a variable for each bound of each contract
     all_cycles_formula, variables = get_agents_formulas(agent_cycles, map_contracts, contract_variables) # I encode all the inconsistent cycle

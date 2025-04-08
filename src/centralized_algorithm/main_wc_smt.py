@@ -27,7 +27,7 @@ def ub(name):
 def p(name):
     return Symbol(f"p_{name}", REAL)
 
-
+# This function encodes the contracts
 def encode_gamma(problem, bounds, agent):
     gamma = []
     uncontrollable_formulae = {}
@@ -88,7 +88,7 @@ def encode_gamma(problem, bounds, agent):
             gamma.append(Or(disj))
     return And(gamma), contingents, y, uncontrollable_formulae, x
 
-
+# This function encodes the requirement/private constraints
 def encode_psi(problem, uncontrollable_formulae, x, bounds, agent):
     frees = []
     for c in problem.constraints:
@@ -173,15 +173,15 @@ def encode_secondary_objective(original_bounds, bounds):
 
 
 
-def encode_on_bounds(problem, bounds, agent, controllability="weak", use_secondary=False):
+def encode_on_bounds(problem, bounds, agent, use_secondary=False):
     gamma, contingents, y, uncontrollable_formulae, xp = encode_gamma(problem, bounds, agent)
     psi, x = encode_psi(problem, uncontrollable_formulae, xp, bounds, agent)
 
     all_consistencies = []
     for m in my_product(contingents):
-        if controllability == "weak":
-            tmp_controllables = [FreshSymbol(REAL) for _ in x]
-            m.update(zip(x, tmp_controllables))
+
+        tmp_controllables = [FreshSymbol(REAL) for _ in x]
+        m.update(zip(x, tmp_controllables))
         all_consistencies.append(psi.substitute(m))
 
     formula = And(all_consistencies)
@@ -205,12 +205,14 @@ def encode_process(B):
 
 
 def owned_contract_as_contingent(problem):
+    print(problem)
     for constraint in problem.constraints:
         if constraint.process == True and constraint.contingent == False:
             constraint.contingent = True
+    exit(0)
 
 
-def max_bounds(mas, solver_name="z3", controllability="weak", use_secondary=False):
+def max_bounds(mas, SMT_solver, use_secondary=False):
     contract_formula, bounds = encode_process(mas.B)
     P = []
 
@@ -220,7 +222,7 @@ def max_bounds(mas, solver_name="z3", controllability="weak", use_secondary=Fals
         owned_contract_as_contingent(problem)  # I transform all contract as contingent for checking WC
 
 
-        formula, x = encode_on_bounds(problem, bounds, agent, controllability=controllability,use_secondary=False)
+        formula, x = encode_on_bounds(problem, bounds, agent,use_secondary=False)
         print(formula.serialize())
         print("**************")
         problems_formulae.append(formula)
@@ -244,7 +246,7 @@ def max_bounds(mas, solver_name="z3", controllability="weak", use_secondary=Fals
                         tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
             obj2 = MaximizationGoal(Plus(tot))
 
-    with Optimizer(name=solver_name) as opt:
+    with Optimizer(name=SMT_solver) as opt:
         opt.add_assertion(final_formula)
         if (not use_secondary) or len(P) == 1:
             result = opt.optimize(obj1)
