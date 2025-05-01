@@ -51,7 +51,7 @@ def share_cycle(agent_cycles, map_contracts, readers, map_contract_owner):
         for cycle in cycles:
             agents = []
             for contingent in cycle[0][1] + cycle[1][1]:
-                if contingent.process:
+                if contingent.contract:
                     source = contingent.atoms[0].source.name
                     dest = contingent.atoms[0].dest.name
                     l = contingent.atoms[0].lowerBound
@@ -71,19 +71,6 @@ def share_cycle(agent_cycles, map_contracts, readers, map_contract_owner):
                         new_cycles.append(cycle)
                         agents.append(agent)
 
-            '''
-            # remove cycle if only one contract and agent is not owner of the contract
-            cycle_contracts = cycle[0][1] + cycle[1][1]
-            if len(cycle_contracts) ==1:
-                source = contingent.atoms[0].source.name
-                dest = contingent.atoms[0].dest.name
-                l = contingent.atoms[0].lowerBound
-
-                contract_label = map_contracts[dest + "_" + source] if l < 0 else map_contracts[source + "_" + dest]
-                if map_contract_owner[contract_label] != agent:
-                    cycles.remove(cycle)
-        new_agent_cycles[agent] = new_cycles
-        '''
     return new_agent_cycles, list_invovled_contract
 
 
@@ -207,8 +194,8 @@ def compute_agent_ranking(map_formula, map_contracts, contracts_variables): # th
                     variables_ranking[contract_variable] +=1
                 else:
                     variables_ranking[contract_variable] = 1
-    #print("test variables ranking ", variables_ranking)
-    # here I create the liste of ranking among the variables
+
+    # here I create the list of ranking among the variables
     rank = []
     for i in range(len(variables_ranking)):
         keys = list(variables_ranking.keys())
@@ -222,15 +209,14 @@ def compute_agent_ranking(map_formula, map_contracts, contracts_variables): # th
 
     return rank
 
-def run_controllability_check(mas):
-    agent_cycles, map_contracts = compute_controllability(mas)
-    return agent_cycles, map_contracts
+
 
 def run(mas, agent_cycles, map_contracts):
+
     #print("test: readers", mas.readers)
     #print("test: owners", mas.owners)
     map_contract_owner = create_map_contracts_owners(mas.owners)
-    print("map contract owner ", map_contract_owner)
+    #print("map contract owner ", map_contract_owner)
 
 
     contracts_variables, agent_variables, variables_bounds  = create_contracts_variables(mas.B, mas.owners)
@@ -241,23 +227,23 @@ def run(mas, agent_cycles, map_contracts):
     #print("size agent_cycles ", len(agent_cycles))
     #print("agent_cycles ", agent_cycles)
     agent_cycles, list_involved_contract = share_cycle(agent_cycles, map_contracts, mas.readers, map_contract_owner)
-    print("list involved_contract ", list_involved_contract)
+    #print("list involved_contract ", list_involved_contract)
 
 
 
     agent_shared_cycles, single_agent_cycles = sort_cycles(agent_cycles)
-    print("variable bounds ",variables_bounds)
+    #print("variable bounds ",variables_bounds)
     set_variables_bounds(single_agent_cycles, mas.B, map_contracts, contracts_variables, variables_bounds)
-    print("variable bounds after solving local constraint ",variables_bounds)
+    #print("variable bounds after solving local constraint ",variables_bounds)
 
     #print(agent_shared_cycles)
     rank = compute_agent_ranking(agent_cycles, map_contracts, contracts_variables)
-    #rank.reverse()
-    print("rank ", rank)
-    print("***********************************************")
+    #rank.reverse()   Here if you want to reverse the order of agents
+    #print("rank ", rank)
+    #print("***********************************************")
 
     assignement = run_synchronous_backtracking(variables_bounds, agent_cycles, map_contracts, contracts_variables, rank, map_contract_owner)
-    print("No solution exist !!!!") if len(assignement) == 0 else print("The solution is : ", assignement)
+    print("No solution exist !!!!") if len(assignement) == 0 else print("A solution exist ! The solution is : ", assignement)
     return False if len(assignement) == 0 else True
 
 
@@ -268,7 +254,7 @@ def run(mas, agent_cycles, map_contracts):
 def compute_min_path_formula(contracts, map_contracts,contracts_variables):
     sum = []
     for contingent in contracts:
-        if contingent.process:
+        if contingent.contract:
             source = contingent.atoms[0].source.name
             dest = contingent.atoms[0].dest.name
             l = contingent.atoms[0].lowerBound
@@ -289,7 +275,7 @@ def compute_min_path_formula(contracts, map_contracts,contracts_variables):
 def compute_max_path_formula(contracts, map_contracts,contracts_variables):
     sum = []
     for contingent in contracts:
-        if contingent.process:
+        if contingent.contract:
             source = contingent.atoms[0].source.name
             dest = contingent.atoms[0].dest.name
             l = contingent.atoms[0].lowerBound
@@ -401,7 +387,6 @@ def local_assignement(formula_to_satisfy, formula_to_forget,  variables_bounds, 
 #solution to keep: We are trying to find a fixed duration of some contracts such that all networks are controllable, i.e., can the agent agree on a duration of some contract to recover controllability
 # First need to create clusters of agent to independently solves the problems
 # Second find the right ranking among the agent of the cluster
-# il faut separer les contraintes partager et les contraintes solo, contenant les variables d'un seul agent
 # To do, how to do the backtracking correctly, one it's done the rest is easy
 # To do the backtracking you find the equation that is not satisfy and you select the agent in order of the ranking and if the variable of the agent is not reduce to the maximum then you add another constraint
 # future work could try to find the smallest reduction required to recover controllability to all agent and if possible to make it fair among the agent, i.e., reduce the same amount the contract among agent
@@ -544,18 +529,11 @@ def run_synchronous_backtracking(variables_bounds, agents_cycles, map_contracts,
     current_rank = 0
     map_restriction = {}
 
-    print(rank)
-    #print(agents_cycles)
     for variable in rank: # initialization
 
         map_restriction[variable] = []
-    start_time = time.time()
     while (True):  # running backtracking
 
-        current_time = time.time()
-        if current_time - start_time>  60*10: #10min
-            print("time_out")
-            return {}
 
 
         if len(assignement) == len(rank):

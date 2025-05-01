@@ -26,12 +26,12 @@ def p(name):
     return Symbol(f"p_{name}", REAL)
 
 # We transform each cSTNU (one per agent) to an STNU by replacing each label on edges by the actual duration of the contract
-def cSTNU_to_STNU(problem, B, map_contracts):
+def cSTNU_to_STNU(network, B, map_contracts):
 
 
     constraints = set()
-    for constraint in problem.constraints:
-        if constraint.process:
+    for constraint in network.constraints:
+        if constraint.contract:
 
             source = constraint.atoms[0].source
             dest = constraint.atoms[0].dest
@@ -41,21 +41,19 @@ def cSTNU_to_STNU(problem, B, map_contracts):
             at = AtomicConstraint(source,dest,l,u)
             atoms = set()
             atoms.add(at)
-            new_constraint = Constraint(atoms, True, constraint.process, constraint.fixBinary())
+            new_constraint = Constraint(atoms, True, constraint.contract, constraint.fixBinary())
             constraints.add(new_constraint)
 
         else:
             constraints.add(constraint)
 
-    new_problem = Problem()
-    new_problem.timePoints = problem.timePoints
-    new_problem.constraints = constraints
-    new_problem.contingent_parent  = problem.contingent_parent
-    new_problem.vz = problem.vz
-    new_problem.positive = problem.positive
-    new_problem.disjunctivity = problem.disjunctivity
-    new_problem.game = problem.game
-    return new_problem
+    new_network = Network()
+    new_network.timePoints = network.timePoints
+    new_network.constraints = constraints
+    new_network.contingent_parent  = network.contingent_parent
+    new_network.vz = network.vz
+
+    return new_network
 
 # This function check the Weak Controllability (WC) of each network (STNU)
 # It is based on the latest most efficient algorithm for checking WC from Ajdin Sumic and Thierry Vidal 2024
@@ -65,9 +63,9 @@ def cSTNU_to_STNU(problem, B, map_contracts):
 def compute_controllability(mas):
     agent_cycles = {}
     map_contracts = {}
-    for i in range (len(mas.problems)):
-        problem = cSTNU_to_STNU(mas.problems[i], mas.B, map_contracts)
-        cycles = check_weak(problem)
+    for i in range (len(mas.networks)):
+        network = cSTNU_to_STNU(mas.networks[i], mas.B, map_contracts)
+        cycles = check_weak(network)
         agent_cycles[mas.agents[i].name] = cycles
     return agent_cycles, map_contracts
 
@@ -173,8 +171,6 @@ def create_contracts_variables(B):
 def get_variables_formula(B, variables, contract_variables):
 
     variables_formula = []
-    print(variables)
-    print(contract_variables)
     for label, bounds in B.items():
 
         for i, (L, U) in enumerate(bounds):
@@ -257,7 +253,7 @@ def repair_cycle(mas, agent_cycles, map_contracts , SMT_solver, use_secondary= F
                         tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
             obj2 = MaximizationGoal(Plus(tot))
 
-    with Optimizer(name=solver) as opt:
+    with Optimizer(name=SMT_solver) as opt:
         opt.add_assertion(formula)
         if (not use_secondary) or len(P) == 1:
             result = opt.optimize(obj1)

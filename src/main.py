@@ -1,5 +1,7 @@
+import argparse
+
 from centralized_algorithm.main_wc_cycles import *
-from centralized_algorithm.main_wc_smt import *
+from distributed_algorithm.synchronous_backtracking_algorithm import *
 from structures import *
 
 # This function display the bounds of the contract after running a repair algorithm.
@@ -35,8 +37,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    mas = MAS() # This is equivalent to the MISTNU model
-    mas.fromFile(args.inputFile) # here we read the instance to test
+    mistnu = MISTNU() # This is equivalent to the MISTNU model
+    mistnu.fromFile(args.inputFile) # here we read the instance to test
 
     SMT_solver = "z3"  # here we use the Z3 solver
 
@@ -45,19 +47,23 @@ if __name__ == "__main__":
         if args.solver == "wc_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
 
-            agent_cycles, map_contracts = compute_controllability(mas)  # Get all the negative cycles of all agents
+            agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
 
-            res_bool, res, p_res, original_bounds = repair_cycle(mas, agent_cycles, map_contracts, SMT_solver, use_secondary=args.fairness)
+            res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_secondary=args.fairness)
 
             display_solution(res, p_res, original_bounds, args.fairness)
 
 
+        if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
-        if args.solver == "wc_smt": # here we run the SMT repair algorithm fom the state of the art
+            agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
+
+            run(mistnu, agent_cycles, map_contracts)
 
 
-            res_bool, res, p_res, original_bounds = max_bounds(mas, SMT_solver, use_secondary=args.fairness)
-            display_solution(res, p_res, original_bounds, args.fairness)
 
+
+    else :
+        print("Please enter a method using the --solver argument")
 
 

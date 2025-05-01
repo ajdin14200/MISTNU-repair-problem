@@ -27,7 +27,7 @@ def topological_ordering(child_per_tp, vz):
 
 
 
-def get_divergent(problem):
+def get_divergent(network):
     child_per_tp = {}  # get graph + give the childs per tp which identifies divergent time-points
     parent_per_tp = {} # give the parent of each tp which dentifies convergent time-point
     graph = {}
@@ -35,11 +35,11 @@ def get_divergent(problem):
     divergents_tps = set()
     convergents_tps = set()
 
-    for name, tp in problem.timePoints.items():
+    for name, tp in network.timePoints.items():
         child_per_tp[tp] = []
         parent_per_tp[tp] = []
         graph[tp] = []
-    for constraint in problem.constraints:
+    for constraint in network.constraints:
         source = constraint.atoms[0].source
         dest = constraint.atoms[0].dest
         l = constraint.atoms[0].lowerBound
@@ -50,7 +50,7 @@ def get_divergent(problem):
         graph[source].append(constraint)
         atoms = set()
         atoms.add(AtomicConstraint(dest,source,-u,-l))
-        inverse_constraint = Constraint(atoms,constraint.contingent,constraint.process)
+        inverse_constraint = Constraint(atoms,constraint.contingent,constraint.contract)
         graph[dest].append(inverse_constraint)
 
     for k,v in child_per_tp.items():
@@ -69,9 +69,6 @@ def is_path_Inner_cycle(dest, path, rank, divergents_tps):
     pathsTP = path[2]
     bool1 = dest in pathsTP
     bool2 = dest in divergents_tps
-    #print("dest ", dest)
-    #print("origine tp : ", pathsTP[0])
-    #print("rank ",rank, " + size rank ",len(rank))
     bool3 = rank[dest] < rank[pathsTP[0]]
     return bool1 or (bool2 and bool3)
 
@@ -403,17 +400,10 @@ def check_weak(problem):
 
     cycles = []
     graph, child_per_tp, divergents_tps, convergents_tps = get_divergent(problem) #child_per_tp is a map tp to constraints and divergents_tps is all tp that are divergent
-    #print(child_per_tp)
-    #print("divergent tp : ",divergents_tps)
-    #print("tps: ",problem.timePoints)
-    #print("convergent tps ", convergents_tps)
+
     rank = topological_ordering(child_per_tp, problem.vz)
-    #print("rank ",rank)
-    #exit(0)
-    #print("size divergent_tp ", divergents_tps)
 
     for divergent in divergents_tps:
-        #print(divergent)
         get_divergent_cycles(divergent, graph, cycles, rank, divergents_tps, convergents_tps)
 
 

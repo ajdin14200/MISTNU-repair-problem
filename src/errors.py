@@ -3,11 +3,6 @@
 class RedefinitionError(Exception):
     pass
 
-
-class UnsupportedError(Exception):
-    pass
-
-
 class NoSuchElementError(Exception):
     pass
 
@@ -37,5 +32,3 @@ class ParsingError(Exception):
     pass
 
 
-class TriviallyInconsistentError(Exception):
-    pass
