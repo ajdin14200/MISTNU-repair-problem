@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     if args.solver:
 
-        if args.solver == "wc_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
+        if args.solver == "linear_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
 
             agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
