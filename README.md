@@ -13,5 +13,5 @@ In the following, we present a concrete and realistic example of the MISTNU mode
 
 Consider a radiologist (agent a), a nurse (agent b), and a doctor (agent c). The radiologist must perform an X-ray on a patient, after which the doctor analyzes the results to prescribe medication. Meanwhile, the nurse waits for the X-ray to finish in order to escort the current patient to the waiting room and bring a second patient to the radiologist. This scenario involves three contracts: (p) the X-ray of the first patient, which is contingent for both the nurse and the doctor, (q) the nurse bringing the second patient to the radiologist, making it contingent for the radiologist, (r) the nurse waiting for the second X-ray to complete before moving the patient to another waiting room. After the second X-ray, the radiologist must clean and inspect the equipment as required by regulation. The table show with B the original bonds of the contracts in which the MISTNU is not 
 
-<img src='MISTNU_example_picture.png'/>
+<img src='MISTNU_example_picture.png' width='300px'/>
 
