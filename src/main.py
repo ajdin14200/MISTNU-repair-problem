@@ -31,8 +31,10 @@ if __name__ == "__main__":
 
 
     parser.add_argument('inputFile', metavar='inputFile', type=str, help='The problem to encode')
-    parser.add_argument('--fairness', '-f', action="store_true")
     parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use')
+    #parser.add_argument('--fairness', '-f', action="store_true")  can only be used with the linear_cycle option.
+    # This is an additional optimization function that provides some fairness among the contracts reduction, i.e., maximize the number of contracts that can be reduced by the same amount
+
 
     args = parser.parse_args()
 
