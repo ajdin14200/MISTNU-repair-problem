@@ -31,6 +31,16 @@ To run the proposed algorithm for repairing MISTNUs, you must run the main.py fi
 
 python3 ./main ../benchmark/demofile.txt --solver SBT
 
+# Collaborators
+
+- Ajdin Sumic
+- Roberto Posenato
+- Thierry Vidal
+- Carlo Combi
+- Frédéric Maris
+- Andrea Micheli (previous work on MISTNU)
+- Alessandro Cimatti (previous work on MISTNU)
+
 
 
 
