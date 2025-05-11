@@ -245,7 +245,6 @@ class Network(object):
     def __init__(self):
         self.timePoints = {}
         self.constraints = set()
-        self.contingent_parent = {}
         self.vz = None
 
 
@@ -287,6 +286,5 @@ class Network(object):
         if c.contingent:
             s = c.atoms[0].source
             d = c.atoms[0].dest
-            self.contingent_parent[d] = s
 
         return c

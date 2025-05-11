@@ -50,7 +50,6 @@ def cSTNU_to_STNU(network, B, map_contracts):
     new_network = Network()
     new_network.timePoints = network.timePoints
     new_network.constraints = constraints
-    new_network.contingent_parent  = network.contingent_parent
     new_network.vz = network.vz
 
     return new_network

@@ -1,6 +1,7 @@
 import argparse
 
 from centralized_algorithm.main_wc_cycles import *
+from centralized_algorithm.main_smt import *
 from distributed_algorithm.synchronous_backtracking_algorithm import *
 from structures import *
 
@@ -32,7 +33,8 @@ if __name__ == "__main__":
 
     parser.add_argument('inputFile', metavar='inputFile', type=str, help='The problem to encode')
     parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use')
-    #parser.add_argument('--fairness', '-f', action="store_true")  can only be used with the linear_cycle option.
+    parser.add_argument('--fairness', '-f', action="store_true")
+    #can only be used with the linear_cycle option.
     # This is an additional optimization function that provides some fairness among the contracts reduction, i.e., maximize the number of contracts that can be reduced by the same amount
 
 
@@ -54,6 +56,10 @@ if __name__ == "__main__":
             res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_secondary=args.fairness)
 
             display_solution(res, p_res, original_bounds, args.fairness)
+
+        if args.solver == "SMT":
+
+            res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, use_secondary=args.fairness)
 
 
         if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
