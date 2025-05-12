@@ -18,7 +18,7 @@ Consider a radiologist (agent a), a nurse (agent b), and a doctor (agent c). The
 
 # Folder
 
-The folder contains three algorithms: a Weak Controllability checking algorithm for STNUs that identifies all negative cycles; a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding; and a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronuous Backtracking algorithm).
+The folder contains three repair algorithms: The centralized SMT-based algorithm that encode the problem as a formula to solve; a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding; and a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronuous Backtracking algorithm).
 
 #  Requirements
 
@@ -27,9 +27,16 @@ In addition, we require installing the optimization package of the pySMT framewo
 
 # Run
 
-To run the proposed algorithm for repairing MISTNUs, you must run the main.py file by providing a test file and the method with the --solver parameter (either SBT or linear_cycle).  Here is an example with the proposed example that can be found in the demofile.txt:
+To run the proposed algorithm for repairing MISTNUs, you must run the main.py file by providing a test file, the method with the --solver parameter (either "SMT", "SBT", or "linear_cycle"), and the optimization function with --optim(not mandatory but see to following to use them). 
+We propose four optimization functions :
+  - the "min_k_budget" that minimizes the reduction of the contracts
+  - the "fairness_contract" that minimizes the reduction of the contracts and maximizes the number of contracts that are reduced by the same amount
+  - the "k-contract" that minimizes the number of contracts that are reduced
+  - the "fairness_agent" that minimizes the reduction of the contracts and maximizes the number of agent that reduced their flexibility by the same amount, i.e., the sum of the reduction of the contracts it owns
 
-python3 ./main ../benchmark/demofile.txt --solver SBT
+Here is an example with the proposed example that can be found in the demofile.txt:
+
+python3 ./main ../benchmark/demofile.txt --solver SBT --optim k-contract
 
 # Collaborators
 

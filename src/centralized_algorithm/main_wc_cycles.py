@@ -289,7 +289,7 @@ def repair_cycle(mistnu, agent_cycles, map_contracts , SMT_solver, use_optim):
         obj1 = MinimizationGoal(objective)
         lexicographic_optim.append(obj1)
 
-    elif use_optim == "fairness":  # fairness optimization
+    elif use_optim == "fairness_contract":  # fairness optimization
 
         objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
         obj1 = MinimizationGoal(objective)
@@ -355,7 +355,7 @@ def repair_cycle(mistnu, agent_cycles, map_contracts , SMT_solver, use_optim):
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in contract_variables.items()}
 
             p_res = {}
-            if use_optim in ["k_contract", "fairness"]:
+            if use_optim in ["k_contract", "fairness_contract"]:
                 p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in contract_variables}
 
             elif use_optim == "fairness_agent":

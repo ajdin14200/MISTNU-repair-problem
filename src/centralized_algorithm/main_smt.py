@@ -316,7 +316,7 @@ def onbounds(mistnu, solver_name, use_optim):
         obj1 = MinimizationGoal(objective)
         lexicographic_optim.append(obj1)
 
-    elif use_optim == "fairness": #fairness optimization
+    elif use_optim == "fairness_contract": #fairness optimization
 
         objective = primary_objective(mistnu.B, bounds)  # minimization of the reduction
         obj1 = MinimizationGoal(objective)
@@ -382,7 +382,7 @@ def onbounds(mistnu, solver_name, use_optim):
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in bounds.items()}
 
             p_res = {}
-            if use_optim in ["k_contract", "fairness"]:
+            if use_optim in ["k_contract", "fairness_contract"]:
                 p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in bounds}
 
             elif use_optim == "fairness_agent":
