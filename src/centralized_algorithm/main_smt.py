@@ -3,6 +3,8 @@ import itertools
 
 from pysmt.shortcuts import *
 from pysmt.typing import *
+from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
+
 
 from src.structures import *
 
@@ -272,9 +274,9 @@ def onbounds(mistnu, solver_name, use_secondary=False):
             bool = False
             if model:
                 bool = True
-            print(f"cost: {cost}")
-            print(f"model: {model}")
-            print("")
+            #print(f"cost: {cost}")
+            #print(f"model: {model}")
+            #print("")
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in bounds.items()}
 
             p_res = {}

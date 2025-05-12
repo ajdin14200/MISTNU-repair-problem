@@ -61,6 +61,9 @@ if __name__ == "__main__":
 
             res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, use_secondary=args.fairness)
 
+            display_solution(res, p_res, original_bounds, args.fairness)
+
+
 
         if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
