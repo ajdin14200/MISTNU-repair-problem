@@ -7,7 +7,7 @@ from structures import *
 
 # This function display the bounds of the contract after running a repair algorithm.
 # It shows the original bounds and the new bounds of each contract
-def display_solution(res, p_res, original_bounds, fairness):
+def display_solution(res, p_res, original_bounds):
 
     print("Repaired bounds:")
     for n, lst in res.items():
@@ -16,10 +16,9 @@ def display_solution(res, p_res, original_bounds, fairness):
                 f"  {n}: original bounds -> {original_bounds[n][i]} new bounds -> [{l}, {u}] (~= [{float(l):.2f}, {float(u):.2f}])")
     print("")
 
-    if fairness:
-        print("Percentages:")
-        for n, v in p_res.items():
-            print(f"  p of {n}: {v} (~= {float(v):.2f})")
+
+    for n, v in p_res.items():
+        print(f"  p of {n}: {v} (~= {float(v):.2f})")
 
 
 # Here we ask the parameter to the user and run the appropriate repair algorithm
@@ -33,7 +32,7 @@ if __name__ == "__main__":
 
     parser.add_argument('inputFile', metavar='inputFile', type=str, help='The problem to encode')
     parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use')
-    parser.add_argument('--fairness', '-f', action="store_true")
+    parser.add_argument('--optim', metavar='solver', type=str, help='Which optimization function to use')
     #can only be used with the linear_cycle option.
     # This is an additional optimization function that provides some fairness among the contracts reduction, i.e., maximize the number of contracts that can be reduced by the same amount
 
@@ -53,15 +52,15 @@ if __name__ == "__main__":
 
             agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
 
-            res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_secondary=args.fairness)
+            res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_optim=args.optim)
 
-            display_solution(res, p_res, original_bounds, args.fairness)
+            display_solution(res, p_res, original_bounds)
 
         if args.solver == "SMT":
 
-            res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, use_secondary=args.fairness)
+            res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, use_optim=args.optim)
 
-            display_solution(res, p_res, original_bounds, args.fairness)
+            display_solution(res, p_res, original_bounds)
 
 
 

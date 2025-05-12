@@ -10,20 +10,7 @@ sys.path.append('checking_algorithm')
 from wc_checking_algorithm import *
 
 
-def diff(name):
-    return Symbol(f"diff_{name}", REAL)
 
-
-def lb(name):
-    return Symbol(f"diff_{name}_LB", REAL)
-
-
-def ub(name):
-    return Symbol(f"diff_{name}_UB", REAL)
-
-
-def p(name):
-    return Symbol(f"p_{name}", REAL)
 
 # We transform each cSTNU (one per agent) to an STNU by replacing each label on edges by the actual duration of the contract
 def cSTNU_to_STNU(network, B, map_contracts):
@@ -59,20 +46,20 @@ def cSTNU_to_STNU(network, B, map_contracts):
 # This new WC checking algorithm returns for an STNU its negative cycle if not weakly controllable
 # Please note that each cycle is compose of a min and a max path where the min representive the positive path in the negative cycle from v_i to v_j
 # while the max path the negative path in the negative cycle from v_j to v_i. This is due to the way the search is done in the WC-Checking algorithm
-def compute_controllability(mas):
+def compute_controllability(mistnu):
     agent_cycles = {}
     map_contracts = {}
-    for i in range (len(mas.networks)):
-        network = cSTNU_to_STNU(mas.networks[i], mas.B, map_contracts)
+    for i in range (len(mistnu.networks)):
+        network = cSTNU_to_STNU(mistnu.networks[i], mistnu.B, map_contracts)
         cycles = check_weak(network)
-        agent_cycles[mas.agents[i].name] = cycles
+        agent_cycles[mistnu.agents[i].name] = cycles
     return agent_cycles, map_contracts
 
 # encode the contract (process) in the min path of the negative cycle
 def compute_min_path_formula(path, map_contracts,contracts_variables, variables, cycle_variables):
     sum = []
     for contingent in path[1]:
-        if contingent.process:
+        if contingent.contract:
             source = contingent.atoms[0].source.name
             dest = contingent.atoms[0].dest.name
             l = contingent.atoms[0].lowerBound
@@ -95,7 +82,7 @@ def compute_min_path_formula(path, map_contracts,contracts_variables, variables,
 def compute_max_path_formula(path, map_contracts,contracts_variables, variables, cycle_variables):
     sum = []
     for contingent in path[1]:
-        if contingent.process:
+        if contingent.contract:
             source = contingent.atoms[0].source.name
             dest = contingent.atoms[0].dest.name
             l = contingent.atoms[0].lowerBound
@@ -208,42 +195,76 @@ def primary_objective(original_bounds, bounds):
     return Plus(s)
 
 
+
 # This function is the optimization function that maximizes the number of contracts that are reduce by the same amount
-def encode_secondary_objective(original_bounds, bounds):
+def encode_fairness_on_contract_objective(original_bounds, bounds):
     perc_constraints = []
+    # Add "Swedish" fairness constraints to the formula
     ps = []
     for name, lst in bounds.items():
         assert len(lst) == 1, "Disjunctive contingent are not supported yet"
         (L, U) = lst[0]
-        ps.append(p(name))
+        p_variable = Symbol(f"{name}", REAL)
+        ps.append(p_variable)
         orig_L, orig_U = original_bounds[name][0]
+        #print("original bounds ",orig_L, orig_U)
+        #print("new bounds ",L, U)
         perc_formula = Div(Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U)), Real(orig_U - orig_L))
-        p_formula = Equals(p(name), perc_formula)
+        #not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
+        p_formula = Equals(p_variable, perc_formula)
+        #print("p ", p_formula.serialize())
         perc_constraints.append(p_formula)
-        perc_constraints.append(GE(p(name), Real(0)))
+        perc_constraints.append(GE(p_variable, Real(0)))
     return And(perc_constraints), ps
+
+# This functin encode the k-constraint optimization function, i.e., it minimizes the number of contracts that are reduced
+def encode_k_contract_objective(original_bounds, bounds):
+    perc_constraints = []
+    # Add "Swedish" fairness constraints to the formula
+    ps = []
+    for name, lst in bounds.items():
+        assert len(lst) == 1, "Disjunctive contingent are not supported yet"
+        (L, U) = lst[0]
+        p_variable = Symbol(f"{name}", REAL)
+        ps.append(p_variable)
+        orig_L, orig_U = original_bounds[name][0]
+        perc_formula = Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U))
+        # not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
+        p_formula = Equals(p_variable, perc_formula)
+        # print("p ", p_formula.serialize())
+        perc_constraints.append(p_formula)
+        perc_constraints.append(GE(p_variable, Real(0)))
+    return And(perc_constraints), ps
+
+
+
 
 # This function is the centralized algorithm that repairs all the negative cycles using z3 as a solver
 
-def repair_cycle(mas, agent_cycles, map_contracts , SMT_solver, use_secondary= False):
+def repair_cycle(mistnu, agent_cycles, map_contracts , SMT_solver, use_optim):
 
-    contract_variables = create_contracts_variables(mas.B) # I create a variable for each bound of each contract
+    contract_variables = create_contracts_variables(mistnu.B) # I create a variable for each bound of each contract
     all_cycles_formula, variables = get_agents_formulas(agent_cycles, map_contracts, contract_variables) # I encode all the inconsistent cycle
-    variables_formula = get_variables_formula(mas.B, variables, contract_variables) # I encode the variables
-    print(variables_formula)
+    variables_formula = get_variables_formula(mistnu.B, variables, contract_variables) # I encode the variables
+    #print(variables_formula)
 
-    P = [] # only used for fairness
-    if use_secondary:
-        p_formula, P = encode_secondary_objective(mas.B, contract_variables)
-        formula = And(all_cycles_formula, And(variables_formula, p_formula))
-    else:
-        formula = And(all_cycles_formula, variables_formula)
+    formula = And(all_cycles_formula, variables_formula)
 
-    objective = primary_objective(mas.B, contract_variables)
-    obj1 = MinimizationGoal(objective)
-    print(formula.serialize())
+    lexicographic_optim = []
 
-    if use_secondary:
+    if use_optim == "min_k_budget":
+        objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
+        obj1 = MinimizationGoal(objective)
+        lexicographic_optim.append(obj1)
+
+    elif use_optim == "fairness":  # fairness optimization
+
+        objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
+        obj1 = MinimizationGoal(objective)
+
+        p_formula, P = encode_fairness_on_contract_objective(mistnu.B, contract_variables)
+        formula = And(formula, p_formula)
+
         tot = []
         if len(P) > 1:
             for p1 in P:
@@ -252,12 +273,24 @@ def repair_cycle(mas, agent_cycles, map_contracts , SMT_solver, use_secondary= F
                         tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
             obj2 = MaximizationGoal(Plus(tot))
 
+        lexicographic_optim.append(obj1)  # First
+        lexicographic_optim.append(obj2)  # Second
+
+    elif use_optim == "k_contract":
+        p_formula, P = encode_k_contract_objective(mistnu.B, contract_variables)
+        formula = And(formula, p_formula)
+        tot = []
+        if len(P) > 1:
+            for p in P:
+                tot.append(Ite(Equals(p, Real(0)), Real(1), Real(0)))
+            obj1 = MaximizationGoal(Plus(tot))
+        lexicographic_optim.append(obj1)
+
+    #print(formula.serialize())
+
     with Optimizer(name=SMT_solver) as opt:
         opt.add_assertion(formula)
-        if (not use_secondary) or len(P) == 1:
-            result = opt.optimize(obj1)
-        else:
-            result = opt.lexicographic_optimize([obj1, obj2])
+        result = opt.lexicographic_optimize(lexicographic_optim)
 
         if result is None:
             raise RuntimeError("The problem is not repairable!")
@@ -268,11 +301,11 @@ def repair_cycle(mas, agent_cycles, map_contracts , SMT_solver, use_secondary= F
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in contract_variables.items()}
 
             p_res = {}
-            if use_secondary:
-                p_res = {n: model.get_py_value(p(n)) for n in contract_variables}
+            if use_optim in ["k_contract", "fairness"]:
+                p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in contract_variables}
 
 
-            return True, res, p_res, mas.B
+            return True, res, p_res, mistnu.B
 
 
 

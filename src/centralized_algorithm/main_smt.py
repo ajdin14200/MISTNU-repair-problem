@@ -208,30 +208,47 @@ def primary_objective(original_bounds, bounds):
     return Plus(s)
 
 
-def encode_secondary_objective(original_bounds, bounds):
+def encode_fairness_on_contract_objective(original_bounds, bounds):
     perc_constraints = []
     # Add "Swedish" fairness constraints to the formula
     ps = []
     for name, lst in bounds.items():
         assert len(lst) == 1, "Disjunctive contingent are not supported yet"
         (L, U) = lst[0]
-        ps.append(p(name))
+        p_variable = Symbol(f"{name}", REAL)
+        ps.append(p_variable)
         orig_L, orig_U = original_bounds[name][0]
         perc_formula = Div(Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U)), Real(orig_U - orig_L))
-        not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
-        p_formula = Equals(p(name), perc_formula)
-        print("p ", p_formula.serialize())
+        #not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
+        p_formula = Equals(p_variable, perc_formula)
+        # print("p ", p_formula.serialize())
         perc_constraints.append(p_formula)
-        perc_constraints.append(GE(p(name), Real(0)))
+        perc_constraints.append(GE(p_variable, Real(0)))
     return And(perc_constraints), ps
             
+# This functin encode the k-constraint optimization function, i.e., it minimizes the number of contracts that are reduced
+def encode_k_contract_objective(original_bounds, bounds):
+    perc_constraints = []
+    # Add "Swedish" fairness constraints to the formula
+    ps = []
+    for name, lst in bounds.items():
+        assert len(lst) == 1, "Disjunctive contingent are not supported yet"
+        (L, U) = lst[0]
+        p_variable = Symbol(f"{name}", REAL)
+        ps.append(p_variable)
+        orig_L, orig_U = original_bounds[name][0]
+        perc_formula = Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U))
+        # not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
+        p_formula = Equals(p_variable, perc_formula)
+        # print("p ", p_formula.serialize())
+        perc_constraints.append(p_formula)
+        perc_constraints.append(GE(p_variable, Real(0)))
+    return And(perc_constraints), ps
 
 
-def onbounds(mistnu, solver_name, use_secondary=False):
+def onbounds(mistnu, solver_name, use_optim):
     contract_formula, bounds = encode_process(mistnu.B)
-    print(contract_formula, bounds)
-    p_formula = True
-    P = []
+    #print(contract_formula, bounds)
 
     problems_formula = []
     for agent, network in zip(mistnu.agents, mistnu.networks):
@@ -239,19 +256,23 @@ def onbounds(mistnu, solver_name, use_secondary=False):
         formula= encode_network(new_network, bounds)
         problems_formula.append(formula)
 
+    formula = And(problems_formula + [contract_formula])
 
-    if use_secondary:
-        p_formula, P = encode_secondary_objective(mistnu.B, bounds)
-        formula = And(problems_formula + [contract_formula] + [p_formula])
-    else:
-        formula = And(problems_formula + [contract_formula])
+    lexicographic_optim = []
 
-    print(formula.serialize())
-    objective = primary_objective(mistnu.B, bounds)
-    obj1 = MinimizationGoal(objective)
-    #print("P ", P)
+    if use_optim == "min_k_budget":
+        objective = primary_objective(mistnu.B, bounds) # minimization of the reduction
+        obj1 = MinimizationGoal(objective)
+        lexicographic_optim.append(obj1)
 
-    if use_secondary:
+    elif use_optim == "fairness": #fairness optimization
+
+        objective = primary_objective(mistnu.B, bounds)  # minimization of the reduction
+        obj1 = MinimizationGoal(objective)
+
+        p_formula, P = encode_fairness_on_contract_objective(mistnu.B, bounds)
+        formula = And(formula, p_formula)
+
         tot = []
         if len(P) > 1:
             for p1 in P:
@@ -260,12 +281,25 @@ def onbounds(mistnu, solver_name, use_secondary=False):
                         tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
             obj2 = MaximizationGoal(Plus(tot))
 
+        lexicographic_optim.append(obj1) # First
+        lexicographic_optim.append(obj2) # Second
+
+    elif use_optim == "k_contract":
+        p_formula, P = encode_k_contract_objective(mistnu.B, bounds)
+        formula = And(formula, p_formula)
+        tot = []
+        if len(P) > 1:
+            for p in P:
+                tot.append(Ite(Equals(p, Real(0)), Real(1), Real(0)))
+            obj1 = MaximizationGoal(Plus(tot))
+        lexicographic_optim.append(obj1)
+
+
+
+
     with Optimizer(name=solver_name) as opt:
         opt.add_assertion(formula)
-        if (not use_secondary) or len(P) == 1:
-            result = opt.optimize(obj1)
-        else:
-            result = opt.lexicographic_optimize([obj1, obj2])
+        result = opt.lexicographic_optimize(lexicographic_optim)
 
         if result is None:
             raise RuntimeError("The problem is not repairable!")
@@ -274,13 +308,11 @@ def onbounds(mistnu, solver_name, use_secondary=False):
             bool = False
             if model:
                 bool = True
-            #print(f"cost: {cost}")
-            #print(f"model: {model}")
-            #print("")
+
             res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in bounds.items()}
 
             p_res = {}
-            if use_secondary:
+            if use_optim in ["k_contract", "fairness"]:
                 p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in bounds}
 
 
