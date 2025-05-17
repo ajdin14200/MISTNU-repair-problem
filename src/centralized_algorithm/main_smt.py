@@ -124,7 +124,7 @@ def get_variables_bounds(network, bounds):
     return contingent_duration_bounds
 
 
-def encoding_requirements(network, controllables, chain_formulas_map):
+def encoding_requirements(network, controllables, chain_formulas_map, controllability, bounds):
 
     formula = []
     for constraint in network.constraints:
@@ -163,15 +163,21 @@ def encoding_requirements(network, controllables, chain_formulas_map):
                 vs = chain_formulas_map[source.name]
                 vd = chain_formulas_map[dest.name]
 
-            formula.append(GE(Minus(vd, vs), Real(l)))
-            formula.append(LE(Minus(vd, vs), Real(u)))
+            if controllability == "Strong" and constraint.contract:
+                l,u = bounds[l][0] # This requirement constraint is a contract so the bounds are variables
+
+            else:
+                l,u = Real(l), Real(u)
+
+            formula.append(GE(Minus(vd, vs), l))
+            formula.append(LE(Minus(vd, vs), u))
     return And(formula)
 
 def my_product(bounds):
     for t in itertools.product(*[v for v in bounds.values()]):
         yield dict(zip((Symbol(f"{x}",REAL) for x in bounds.keys()), t))
 
-def encode_network(network, bounds):
+def encode_network(network, bounds, controllability):
 
     controllables, contingent_durations = get_timepoints_variables(network)
     parents_map = get_variables_parent(network) # get parent for chain of contingents
@@ -183,14 +189,16 @@ def encode_network(network, bounds):
     #print("parent map ", parents_map)
     #print("chain formulas ",chain_formulas_map)
     #print("contingent duration bounds ",contingent_duration_bounds)
+    #print("bounds ", bounds)
 
-    formula = encoding_requirements(network, controllables, chain_formulas_map)
+    formula = encoding_requirements(network, controllables, chain_formulas_map, controllability, bounds)
     #print("formula ", formula)
     projections_formula= []
     for m in my_product(contingent_duration_bounds):
 
-        tmp_controllables = [FreshSymbol(REAL) for _ in controllables.values()]
-        m.update(zip(controllables.values(), tmp_controllables))
+        if controllability == "Weak":
+            tmp_controllables = [FreshSymbol(REAL) for _ in controllables.values()]
+            m.update(zip(controllables.values(), tmp_controllables))
         projections_formula.append(formula.substitute(m))
 
     #print("formula ",projections_formula)
@@ -297,14 +305,15 @@ def encode_k_contract_objective(original_bounds, bounds):
     return And(perc_constraints), ps
 
 
-def onbounds(mistnu, solver_name, use_optim):
+def onbounds(mistnu, solver_name, controllability, use_optim):
     contract_formula, bounds = encode_process(mistnu.B)
     #print(contract_formula, bounds)
 
     problems_formula = []
     for agent, network in zip(mistnu.agents, mistnu.networks):
-        new_network = owned_contract_as_contingent(network)  # I transform all contract as contingent for checking WC
-        formula= encode_network(new_network, bounds)
+        if controllability == "Weak":
+            network = owned_contract_as_contingent(network)  # I transform all contract as contingent for checking WC
+        formula= encode_network(network, bounds, controllability)
         problems_formula.append(formula)
 
     formula = And(problems_formula + [contract_formula])

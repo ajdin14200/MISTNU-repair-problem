@@ -29,10 +29,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Encoder for controllability of temporal problems')
 
-
-    parser.add_argument('inputFile', metavar='inputFile', type=str, help='The problem to encode')
-    parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use')
-    parser.add_argument('--optim', metavar='solver', type=str, help='Which optimization function to use')
+    # Here the first three parameters are mandatory. The -- option makes the parameters optional but it is used for clarity on the input bash command
+    parser.add_argument('--inputFile', metavar='inputFile', type=str, help='The problem to encode', required=True)
+    parser.add_argument('--controllability', metavar='controllability', type=str, help='Which controllability level to use', required=True)
+    parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use', required=True)
+    parser.add_argument('--optim', metavar='optim', type=str, help='Which optimization function to use')
     #can only be used with the linear_cycle option.
     # This is an additional optimization function that provides some fairness among the contracts reduction, i.e., maximize the number of contracts that can be reduced by the same amount
 
@@ -45,35 +46,32 @@ if __name__ == "__main__":
 
     SMT_solver = "z3"  # here we use the Z3 solver
 
-    if args.solver:
 
-        if args.solver == "linear_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
-
-
-            agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
-
-            res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_optim=args.optim)
-
-            display_solution(res, p_res, original_bounds)
-
-        if args.solver == "SMT":
-
-            res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, use_optim=args.optim)
-
-            display_solution(res, p_res, original_bounds)
+    if args.solver == "linear_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
 
+        agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
 
-        if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
+        res_bool, res, p_res, original_bounds = repair_cycle(mistnu, agent_cycles, map_contracts, SMT_solver, use_optim=args.optim)
 
-            agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
+        display_solution(res, p_res, original_bounds)
 
-            run(mistnu, agent_cycles, map_contracts)
+    if args.solver == "SMT":
+
+        res_bool, res, p_res, original_bounds = onbounds(mistnu,  SMT_solver, controllability=args.controllability, use_optim=args.optim)
+
+        display_solution(res, p_res, original_bounds)
 
 
 
+    if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
-    else :
-        print("Please enter a method using the --solver argument")
+        agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
+
+        run(mistnu, agent_cycles, map_contracts)
+
+
+
+
 
 

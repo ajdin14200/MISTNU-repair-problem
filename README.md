@@ -27,7 +27,7 @@ In addition, we require installing the optimization package of the pySMT framewo
 
 # Run
 
-To run the proposed algorithm for repairing MISTNUs, you must run the main.py file by providing a test file, the method with the --solver parameter (either "SMT", "SBT", or "linear_cycle"), and the optimization function with --optim(not mandatory but see to following to use them). 
+To run the proposed algorithm for repairing MISTNUs, you must run the main.py file by providing a test file with the --inputFile parameter, the method with the --solver parameter (either "SMT", "SBT", or "linear_cycle"), and the optimization function with --optim(not mandatory but see to following to use them). 
 We propose four optimization functions :
   - the "min_k_budget" that minimizes the reduction of the contracts
   - the "fairness_contract" that minimizes the reduction of the contracts and maximizes the number of contracts that are reduced by the same amount
@@ -36,7 +36,7 @@ We propose four optimization functions :
 
 Here is an example with the proposed example that can be found in the demofile_WC.txt:
 
-python3 ./main ../benchmark/demofile_WC.txt --solver SBT --optim k-contract
+python3 ./main --inputFile ../benchmark/demofile_WC.txt --solver SBT --optim k-contract
 
 # Collaborators
 
