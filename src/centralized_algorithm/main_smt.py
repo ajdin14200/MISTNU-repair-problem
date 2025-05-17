@@ -124,7 +124,7 @@ def get_variables_bounds(network, bounds):
     return contingent_duration_bounds
 
 
-def encoding_requirements(network, controllables, contingent_durations, chain_formulas_map):
+def encoding_requirements(network, controllables, chain_formulas_map):
 
     formula = []
     for constraint in network.constraints:
@@ -184,7 +184,7 @@ def encode_network(network, bounds):
     #print("chain formulas ",chain_formulas_map)
     #print("contingent duration bounds ",contingent_duration_bounds)
 
-    formula = encoding_requirements(network, controllables, contingent_durations, chain_formulas_map)
+    formula = encoding_requirements(network, controllables, chain_formulas_map)
     #print("formula ", formula)
     projections_formula= []
     for m in my_product(contingent_duration_bounds):
