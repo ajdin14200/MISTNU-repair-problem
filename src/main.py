@@ -47,6 +47,18 @@ if __name__ == "__main__":
     SMT_solver = "z3"  # here we use the Z3 solver
 
 
+    if args.controllability not in ["Strong", "Weak"]:
+        print("Be carefull to write the controllability parameter correctly either 'Strong' or 'Weak'")
+        exit(0)
+
+    if args.solver not in ["SMT", "linear_cycles", "SBT"]:
+        print("Be carefull to write the solver parameter correctly either 'SMT', 'SBT', or 'linear_cycles'")
+        exit(0)
+
+    if args.optim and args.optim not in ["min_k_budget", "fairness_contract", "k-contract", "fairness_agent"]:
+        print("Be carefull to write the optim parameter correctly either 'min_k_budget', 'fairness_contract', 'k-contract', or  'fairness_agent'")
+        exit(0)
+
     if args.solver == "linear_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
 
 
