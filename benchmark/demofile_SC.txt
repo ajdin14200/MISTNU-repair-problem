@@ -34,6 +34,3 @@ J c
 1 f B I 0 10
 1 f I J 0 4
 1 c Z B p p
-
-
-

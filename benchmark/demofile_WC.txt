@@ -1,0 +1,36 @@
+3 A_0 A_1 A_2
+3 p q r
+p 5 10 1 A_0 2 A_1 A_2
+q 10 15 1 A_1 1 A_0
+r 10 20 1 A_0 1 A_1
+5 5
+Z c
+B c
+C u
+D c
+E c
+1 f Z B p p
+1 c B C q q
+1 f C D r r
+1 f D E 15 30
+1 f Z E 60 75
+5 5
+Z c
+B u
+C c
+D U
+G c
+1 c Z B p p
+1 f B C q q
+1 c C D r r
+1 f D G 20 30
+1 f Z G 30 55
+4 4
+Z c
+B u
+I c
+J c
+1 f Z J 20 24
+1 f B I 0 10
+1 f I J 0 4
+1 c Z B p p

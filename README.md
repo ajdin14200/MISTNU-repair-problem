@@ -34,9 +34,9 @@ We propose four optimization functions :
   - the "k-contract" that minimizes the number of contracts that are reduced
   - the "fairness_agent" that minimizes the reduction of the contracts and maximizes the number of agent that reduced their flexibility by the same amount, i.e., the sum of the reduction of the contracts it owns
 
-Here is an example with the proposed example that can be found in the demofile.txt:
+Here is an example with the proposed example that can be found in the demofile_WC.txt:
 
-python3 ./main ../benchmark/demofile.txt --solver SBT --optim k-contract
+python3 ./main ../benchmark/demofile_WC.txt --solver SBT --optim k-contract
 
 # Collaborators
 
