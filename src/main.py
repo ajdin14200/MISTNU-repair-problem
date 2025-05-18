@@ -29,9 +29,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Encoder for controllability of temporal problems')
 
-    # Here the first three parameters are mandatory. The -- option makes the parameters optional but it is used for clarity on the input bash command
+    # Here the first two parameters are mandatory. The -- option makes the parameters optional but it is used for clarity on the input bash command
     parser.add_argument('--inputFile', metavar='inputFile', type=str, help='The problem to encode', required=True)
-    parser.add_argument('--controllability', metavar='controllability', type=str, help='Which controllability level to use', required=True)
     parser.add_argument('--solver', metavar='solver', type=str, help='Which solver to use', required=True)
     parser.add_argument('--optim', metavar='optim', type=str, help='Which optimization function to use')
     #can only be used with the linear_cycle option.
@@ -47,16 +46,12 @@ if __name__ == "__main__":
     SMT_solver = "z3"  # here we use the Z3 solver
 
 
-    if args.controllability not in ["Strong", "Weak"]:
-        print("Be carefull to write the controllability parameter correctly either 'Strong' or 'Weak'")
-        exit(0)
-
-    if args.solver not in ["SMT", "linear_cycles", "SBT"]:
-        print("Be carefull to write the solver parameter correctly either 'SMT', 'SBT', or 'linear_cycles'")
+    if args.solver not in ["SMT_WC", "SMT_SC", "linear_cycles", "SBT"]:
+        print("Be carefull to write the solver parameter correctly")
         exit(0)
 
     if args.optim and args.optim not in ["min_k_budget", "fairness_contract", "k-contract", "fairness_agent"]:
-        print("Be carefull to write the optim parameter correctly either 'min_k_budget', 'fairness_contract', 'k-contract', or  'fairness_agent'")
+        print("Be carefull to write the optim parameter correctly. Otherwise, remove the parameter to just find a repair solution")
         exit(0)
 
     if args.solver == "linear_cycles":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way
@@ -68,12 +63,16 @@ if __name__ == "__main__":
 
         display_solution(res, p_res, original_bounds)
 
-    if args.solver == "SMT":
+    if args.solver == "SMT_WC":
 
-        res_bool, res, p_res, original_bounds = onbounds(mistnu,  SMT_solver, controllability=args.controllability, use_optim=args.optim)
+        res_bool, res, p_res, original_bounds = onbounds(mistnu,  SMT_solver, controllability="Weak", use_optim=args.optim)
 
         display_solution(res, p_res, original_bounds)
 
+    if args.solver == "SMT_SC":
+        res_bool, res, p_res, original_bounds = onbounds(mistnu, SMT_solver, controllability="Strong",use_optim=args.optim)
+
+        display_solution(res, p_res, original_bounds)
 
 
     if args.solver == "SBT":  # here we call the linear repair algorithm that finds and repair all negative cycles in a centralized way

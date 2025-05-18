@@ -18,7 +18,11 @@ Consider a radiologist (agent a), a nurse (agent b), and a doctor (agent c). The
 
 # Folder
 
-The folder contains three repair algorithms: The centralized SMT-based algorithm that encode the problem as a formula to solve; a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding; and a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronuous Backtracking algorithm).
+The folder contains four repair algorithms: 
+    - "SMT_WC", which is the centralized SMT-based algorithm that encode the problem as a formula to solve for the case of Weak Controllability
+    - "SMT_SC", which is the centralized SMT-based algorithm that encode the problem as a formula to solve for the case of Strong Controllability
+    - "linear_cycles", which is a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding
+    - "SBT", which is a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronuous Backtracking algorithm).
 
 #  Requirements
 
@@ -36,7 +40,7 @@ We propose four optimization functions :
 
 Here is an example with the proposed example that can be found in the demofile_WC.txt:
 
-python3 ./main --inputFile ../benchmark/demofile_WC.txt --solver SBT --optim k-contract
+python3 ./main --inputFile ../benchmark/demofile_WC.txt --solver SMT_WC --optim k-contract
 
 # Collaborators
 
@@ -45,8 +49,8 @@ python3 ./main --inputFile ../benchmark/demofile_WC.txt --solver SBT --optim k-c
 - Thierry Vidal
 - Carlo Combi
 - Frédéric Maris
-- Andrea Micheli (previous work on MISTNU)
-- Alessandro Cimatti (previous work on MISTNU)
+- Andrea Micheli
+- Alessandro Cimatti
 
 
 

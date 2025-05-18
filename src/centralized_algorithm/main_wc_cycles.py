@@ -8,6 +8,8 @@ from structures import *
 
 sys.path.append('checking_algorithm')
 from wc_checking_algorithm import *
+from src.optimization_functions import *
+
 
 
 
@@ -184,96 +186,10 @@ def get_variables_formula(B, variables, contract_variables):
             variables_formula.append(And(bounds_formula))
     return And(variables_formula)
 
-# This function is the optimization function that minimizes the reduction of the bounds of the contracts
-def primary_objective(original_bounds, bounds):
-    s = []
-
-    for n, lst in bounds.items():
-        for i, (l, u) in enumerate(lst):  # We assume a list of bounds for future research that will adapt the case of DTNU
-            L, U = original_bounds[n][i]
-            s.append(Plus(Minus(Real(U), u), Minus(l, Real(L))))
-    return Plus(s)
-
-
-
-# This function is the optimization function that maximizes the number of contracts that are reduce by the same amount
-def encode_fairness_on_contract_objective(original_bounds, bounds):
-    perc_constraints = []
-    # Add "Swedish" fairness constraints to the formula
-    ps = []
-    for name, lst in bounds.items():
-        assert len(lst) == 1, "Disjunctive contingent are not supported yet"
-        (L, U) = lst[0]
-        p_variable = Symbol(f"{name}", REAL)
-        ps.append(p_variable)
-        orig_L, orig_U = original_bounds[name][0]
-        #print("original bounds ",orig_L, orig_U)
-        #print("new bounds ",L, U)
-        perc_formula = Div(Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U)), Real(orig_U - orig_L))
-        #not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
-        p_formula = Equals(p_variable, perc_formula)
-        #print("p ", p_formula.serialize())
-        perc_constraints.append(p_formula)
-        perc_constraints.append(GE(p_variable, Real(0)))
-    return And(perc_constraints), ps
-
-#This function is encode the fairness optimization function that maximizes the number of agent that reduce their flexibility by the same amount
-def encode_fairness_on_agent_objective(owners, original_bounds, bounds):
-    perc_constraints = []
-    # Add "Swedish" fairness constraints to the formula
-    ps = []
-
-    print(original_bounds)
-    print(bounds)
-
-    for agent_name, contracts in owners.items():
-
-        p_variable = Symbol(f"{agent_name}", REAL)
-        ps.append(p_variable)
-        sum_reduction = []
-        sum_flexibility = 0
-
-        for contract in contracts:
-            label = contract.atoms[0].lowerBound
-            orig_L, orig_U = original_bounds[label][0]
-            L,U = bounds[label][0]
-
-            sum_reduction.append(Minus(L, Real(orig_L)))
-            sum_reduction.append(Minus(Real(orig_U), U))
-
-            sum_flexibility+= orig_U - orig_L
-
-        perc_formula = Div(Plus(sum_reduction), Real(sum_flexibility))
-        p_formula = Equals(p_variable, perc_formula)
-        perc_constraints.append(p_formula)
-        perc_constraints.append(GE(p_variable, Real(0)))
-    return And(perc_constraints), ps
-
-# This functin encode the k-constraint optimization function, i.e., it minimizes the number of contracts that are reduced
-def encode_k_contract_objective(original_bounds, bounds):
-    perc_constraints = []
-    # Add "Swedish" fairness constraints to the formula
-    ps = []
-    for name, lst in bounds.items():
-        assert len(lst) == 1, "Disjunctive contingent are not supported yet"
-        (L, U) = lst[0]
-        p_variable = Symbol(f"{name}", REAL)
-        ps.append(p_variable)
-        orig_L, orig_U = original_bounds[name][0]
-        perc_formula = Plus(Minus(L, Real(orig_L)), Minus(Real(orig_U), U))
-        # not_touch_formula = And(Equals(Real(orig_L), L), Equals(Real(orig_U), U))
-        p_formula = Equals(p_variable, perc_formula)
-        # print("p ", p_formula.serialize())
-        perc_constraints.append(p_formula)
-        perc_constraints.append(GE(p_variable, Real(0)))
-    return And(perc_constraints), ps
-
-
-
 
 # This function is the centralized algorithm that repairs all the negative cycles using z3 as a solver
 
-def repair_cycle(mistnu, agent_cycles, map_contracts , SMT_solver, use_optim):
+def repair_cycle(mistnu, agent_cycles, map_contracts , solver_name, use_optim):
 
     contract_variables = create_contracts_variables(mistnu.B) # I create a variable for each bound of each contract
     all_cycles_formula, variables = get_agents_formulas(agent_cycles, map_contracts, contract_variables) # I encode all the inconsistent cycle
@@ -282,87 +198,7 @@ def repair_cycle(mistnu, agent_cycles, map_contracts , SMT_solver, use_optim):
 
     formula = And(all_cycles_formula, variables_formula)
 
-    lexicographic_optim = []
-
-    if use_optim == "min_k_budget":
-        objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
-        obj1 = MinimizationGoal(objective)
-        lexicographic_optim.append(obj1)
-
-    elif use_optim == "fairness_contract":  # fairness optimization
-
-        objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
-        obj1 = MinimizationGoal(objective)
-
-        p_formula, P = encode_fairness_on_contract_objective(mistnu.B, contract_variables)
-        formula = And(formula, p_formula)
-
-        tot = []
-        if len(P) > 1:
-            for p1 in P:
-                for p2 in P:
-                    if p1 != p2:
-                        tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
-            obj2 = MaximizationGoal(Plus(tot))
-
-        lexicographic_optim.append(obj1)  # First
-        lexicographic_optim.append(obj2)  # Second
-
-    elif use_optim == "k_contract":
-        p_formula, P = encode_k_contract_objective(mistnu.B, contract_variables)
-        formula = And(formula, p_formula)
-        tot = []
-        if len(P) > 1:
-            for p in P:
-                tot.append(Ite(Equals(p, Real(0)), Real(1), Real(0)))
-            obj1 = MaximizationGoal(Plus(tot))
-        lexicographic_optim.append(obj1)
-
-    elif use_optim == "fairness_agent":
-
-        objective = primary_objective(mistnu.B, contract_variables)  # minimization of the reduction
-        obj1 = MinimizationGoal(objective)
-
-        p_formula, P = encode_fairness_on_agent_objective(mistnu.owners, mistnu.B, contract_variables)
-        formula = And(formula, p_formula)
-
-        tot = []
-        if len(P) > 1:
-            for p1 in P:
-                for p2 in P:
-                    if p1 != p2:
-                        tot.append(Ite(Equals(p1, p2), Real(1), Real(0)))
-            obj2 = MaximizationGoal(Plus(tot))
-
-        lexicographic_optim.append(obj1)  # First
-        lexicographic_optim.append(obj2)  # Second
-
-
-
-
-    #print(formula.serialize())
-
-    with Optimizer(name=SMT_solver) as opt:
-        opt.add_assertion(formula)
-        result = opt.lexicographic_optimize(lexicographic_optim)
-
-        if result is None:
-            raise RuntimeError("The problem is not repairable!")
-            return False, None, None, None # used for testing all benchmark
-
-        else:
-            model, cost = result
-            res = {n: [(model.get_py_value(l), model.get_py_value(u)) for (l, u) in lst] for n, lst in contract_variables.items()}
-
-            p_res = {}
-            if use_optim in ["k_contract", "fairness_contract"]:
-                p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in contract_variables}
-
-            elif use_optim == "fairness_agent":
-                p_res = {n: model.get_py_value(Symbol(f"{n}", REAL)) for n in mistnu.owners.keys()}
-
-            return True, res, p_res, mistnu.B
-
+    return run_optimization(mistnu,formula, contract_variables, use_optim, solver_name)
 
 
 
