@@ -6,7 +6,7 @@ An important aspect of the MISTNU framework is the notion of controllability, wh
 
 When a MISTNU is not controllable, it is often possible to restore controllability by reducing the intervals of contract durations. This work introduces new centralized and distributed algorithms to repair MISTNUs that are not weakly controllable. These methods are part of a paper currently under review for ECAI 2025, and a citation will be provided once acceptance is confirmed.
 
-In the following, we present a concrete and realistic example of the MISTNU model. We begin by assigning duration intervals to the contracts that make the network not Weakly Controllable (column B). Then, we show updated bounds (column B′) that restore Weak Controllability, thereby repairing the MISTNU. Note that the only repairs are the ones that reduced all contracts to a singleton, i.e, directly fixed thir durations.
+In the following, we present a concrete and realistic example of the MISTNU model. We begin by assigning duration intervals to the contracts that make the network not Weakly Controllable (column B). Then, we show updated bounds (column B′) that restore Weak Controllability, thereby repairing the MISTNU. Note that the only repairs are the ones that reduced all contracts to a singleton, i.e, directly fixed their durations.
 
 
 # Example
@@ -19,10 +19,10 @@ Consider a radiologist (agent a), a nurse (agent b), and a doctor (agent c). The
 # Folder
 
 The folder contains four repair algorithms : 
-    - "SMT_WC", which is the centralized SMT-based algorithm that encode the problem as a formula to solve for the case of Weak Controllability 
-    - "SMT_SC", which is the centralized SMT-based algorithm that encode the problem as a formula to solve for the case of Strong Controllability
-    - "linear_cycles", which is a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding
-    - "SBT", which is a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronuous Backtracking algorithm).
+    - "SMT_WC" is the centralized SMT-based algorithm that encodes the problem as a formula to solve for the case of Weak Controllability 
+    - "SMT_SC" is the centralized SMT-based algorithm that encodes the problem as a formula to solve for the case of Strong Controllability
+    - "linear_cycles" is a centralized repair algorithm that gathers negative cycles from all networks and resolves them using a linear encoding
+    - "SBT" is a distributed repair algorithm that distributes the relevant negative cycles to the respective agents and repairs them using an enhanced SBT-based approach (Synchronous Backtracking algorithm).
 
 #  Requirements
 
