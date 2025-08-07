@@ -211,29 +211,29 @@ def compute_agent_ranking(map_formula, map_contracts, contracts_variables): # th
 
 
 
-def run(mas, agent_cycles, map_contracts):
+def run(mistnu, agent_cycles, map_contracts):
 
     #print("test: readers", mas.readers)
     #print("test: owners", mas.owners)
-    map_contract_owner = create_map_contracts_owners(mas.owners)
+    map_contract_owner = create_map_contracts_owners(mistnu.owners)
     #print("map contract owner ", map_contract_owner)
 
 
-    contracts_variables, agent_variables, variables_bounds  = create_contracts_variables(mas.B, mas.owners)
+    contracts_variables, agent_variables, variables_bounds  = create_contracts_variables(mistnu.B, mistnu.owners)
     #print("contract variable ",contracts_variables)
     #print("agent variable ",agent_variables)
     #print("variable bounds ",variables_bounds)
     #print("map contracts ", map_contracts)
     #print("size agent_cycles ", len(agent_cycles))
     #print("agent_cycles ", agent_cycles)
-    agent_cycles, list_involved_contract = share_cycle(agent_cycles, map_contracts, mas.readers, map_contract_owner)
+    agent_cycles, list_involved_contract = share_cycle(agent_cycles, map_contracts, mistnu.readers, map_contract_owner)
     #print("list involved_contract ", list_involved_contract)
 
 
 
     agent_shared_cycles, single_agent_cycles = sort_cycles(agent_cycles)
     #print("variable bounds ",variables_bounds)
-    set_variables_bounds(single_agent_cycles, mas.B, map_contracts, contracts_variables, variables_bounds)
+    set_variables_bounds(single_agent_cycles, mistnu.B, map_contracts, contracts_variables, variables_bounds)
     #print("variable bounds after solving local constraint ",variables_bounds)
 
     #print(agent_shared_cycles)

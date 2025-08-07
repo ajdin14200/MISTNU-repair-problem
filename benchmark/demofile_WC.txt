@@ -24,7 +24,8 @@ G c
 1 f B C q q
 1 c C D r r
 1 f D G 20 30
-1 f Z G 30 55
+1 f Z G 30 50
+
 4 4
 Z c
 B u

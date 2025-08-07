@@ -69,7 +69,7 @@ def compute_min_path_formula(path, map_contracts,contracts_variables, variables,
 
             if l<0: # if inverse contingent then l and u are inversed
                 contract_variable = contracts_variables[map_contracts[dest+"_"+source]][0]
-                sum.append(Minus(Real(u*-1), contract_variable[0]))
+                sum.append(Minus(contract_variable[0], Real(u*-1)))
                 variables.add(contract_variable[0])
                 cycle_variables.add(contract_variable[0])
 
