@@ -3,6 +3,7 @@ import argparse
 from centralized_algorithm.main_wc_cycles import *
 from centralized_algorithm.main_smt import *
 from distributed_algorithm.synchronous_backtracking_algorithm import *
+from distributed_algorithm.admm import *
 from structures import *
 
 # This function display the bounds of the contract after running a repair algorithm.
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     SMT_solver = "z3"  # here we use the Z3 solver
 
 
-    if args.solver not in ["SMT_WC", "SMT_SC", "linear_cycles", "SBT"]:
+    if args.solver not in ["SMT_WC", "SMT_SC", "linear_cycles", "SBT", "ADMM"]:
         print("Be carefull to write the solver parameter correctly")
         exit(0)
 
@@ -80,6 +81,11 @@ if __name__ == "__main__":
         agent_cycles, map_contracts = compute_controllability(mistnu)  # Get all the negative cycles of all agents
 
         run(mistnu, agent_cycles, map_contracts)
+
+    if args.solver == "ADMM":
+
+        agent_cycles, map_contracts = compute_controllability(mistnu)
+        run_admm(mistnu, agent_cycles, map_contracts)
 
 
 
