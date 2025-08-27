@@ -1,0 +1,90 @@
+name: benchmark_dcop_demofile_WC
+objective: min
+
+domains:
+
+  p_domain:
+    values: [5, 6, 7, 8, 9, 10]
+    type: 'time-unit'
+
+  q_domain:
+    values: [10, 11, 12, 13, 14, 15]
+    type: 'time-unit'
+
+  r_domain:
+    values: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    type: 'time-unit'
+
+variables:
+  p_l:
+    domain: p_domain
+    cost_function: p_l - 5
+
+  p_u:
+    domain: p_domain
+    cost_function: 10 - p_u
+  q_l:
+    domain: q_domain
+    cost_function: q_l - 10
+
+  q_u:
+    domain: q_domain
+    cost_function: 15 - q_u
+  r_l:
+    domain: r_domain
+    cost_function: r_l - 10
+
+  r_u:
+    domain: r_domain
+    cost_function: 20 - r_u
+
+constraints:
+  diff_p_l_p_u:
+    type: intention
+    function: 100000 if p_l > p_u else 0
+
+  diff_q_l_q_u:
+    type: intention
+    function: 100000 if q_l > q_u else 0
+
+  diff_r_l_r_u:
+    type: intention
+    function: 100000 if r_l > r_u else 0
+
+
+  A_0_cycle_0:
+    type: intention
+    function: 0 if (p_l - 5 + q_l - 10 + r_l - 10) >= 5 else 100000
+
+  A_1_cycle_0:
+    type: intention
+    function: 0 if (10 - p_u + 15 - q_u + 20 - r_u) >= 15 else 100000
+
+  A_2_cycle_0:
+    type: intention
+    function: 0 if (p_l - 5) >= 1 else 100000
+
+
+agents:
+  A_p_l:
+    capacity: 100000
+  A_p_u:
+    capacity: 100000
+  A_q_l:
+    capacity: 100000
+  A_q_u:
+    capacity: 100000
+  A_r_l:
+    capacity: 100000
+  A_r_u:
+    capacity: 100000
+
+distribution_hints:
+  must_host:
+    A_p_l: [p_l]
+    A_p_u: [p_u]
+    A_q_l: [q_l]
+    A_q_u: [q_u]
+    A_r_l: [r_l]
+    A_r_u: [r_u]
+

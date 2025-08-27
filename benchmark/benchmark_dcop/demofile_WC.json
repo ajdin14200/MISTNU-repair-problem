@@ -1,0 +1,103 @@
+{
+  "agt_metrics": {
+    "A_p_l": {
+      "activity_ratio": 0.00032535608779875796,
+      "count_ext_msg": {
+        "_discovery_A_p_l": 7,
+        "r_u": 1
+      },
+      "cycles": {
+        "r_u": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_p_l": 0,
+        "r_u": 2
+      }
+    },
+    "A_p_u": {
+      "activity_ratio": 0.003826142309365927,
+      "count_ext_msg": {
+        "_discovery_A_p_u": 7,
+        "r_l": 2
+      },
+      "cycles": {
+        "r_l": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_p_u": 0,
+        "r_l": 15
+      }
+    },
+    "A_q_l": {
+      "activity_ratio": 0.016873566506122248,
+      "count_ext_msg": {
+        "_discovery_A_q_l": 7,
+        "p_l": 2
+      },
+      "cycles": {
+        "p_l": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_q_l": 0,
+        "p_l": 127
+      }
+    },
+    "A_q_u": {
+      "activity_ratio": 0.10008523892982195,
+      "count_ext_msg": {
+        "_discovery_A_q_u": 7,
+        "p_u": 2
+      },
+      "cycles": {
+        "p_u": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_q_u": 0,
+        "p_u": 734
+      }
+    },
+    "A_r_l": {
+      "activity_ratio": 0.7566777130042392,
+      "count_ext_msg": {
+        "_discovery_A_r_l": 7,
+        "q_u": 2
+      },
+      "cycles": {
+        "q_u": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_r_l": 0,
+        "q_u": 4362
+      }
+    },
+    "A_r_u": {
+      "activity_ratio": 0.24362506305825654,
+      "count_ext_msg": {
+        "_discovery_A_r_u": 7,
+        "q_l": 1
+      },
+      "cycles": {
+        "q_l": 0
+      },
+      "size_ext_msg": {
+        "_discovery_A_r_u": 0,
+        "q_l": 396
+      }
+    }
+  },
+  "assignment": {
+    "p_l": 6,
+    "p_u": 6,
+    "q_l": 14,
+    "q_u": 14,
+    "r_l": 10,
+    "r_u": 10
+  },
+  "cost": 20,
+  "cycle": 0,
+  "msg_count": 52,
+  "msg_size": 5636,
+  "status": "FINISHED",
+  "time": 2.3969985480034666,
+  "violation": 0
+}

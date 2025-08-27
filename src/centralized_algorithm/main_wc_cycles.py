@@ -74,7 +74,7 @@ def compute_min_path_formula(path, map_contracts,contracts_variables, variables,
                 cycle_variables.add(contract_variable[0])
 
             else:
-                contract_variable = contracts_variables[map_contracts[source+"_"+dest]][0]
+                contract_variable = contracts_variables[map_contracts[source+"_"+dest]][1]
                 sum.append(Minus(Real(u),contract_variable[1]))
                 variables.add(contract_variable[1])
                 cycle_variables.add(contract_variable[1])
@@ -92,7 +92,7 @@ def compute_max_path_formula(path, map_contracts,contracts_variables, variables,
 
 
             if l < 0:  # if inverse contingent then l and u are inversed
-                contract_variable = contracts_variables[map_contracts[dest+"_"+source]][0]
+                contract_variable = contracts_variables[map_contracts[dest+"_"+source]][1]
                 sum.append(Minus(Real(l*-1), contract_variable[1]))
                 variables.add(contract_variable[1])
                 cycle_variables.add(contract_variable[1])
