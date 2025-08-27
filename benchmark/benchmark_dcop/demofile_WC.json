@@ -1,7 +1,7 @@
 {
   "agt_metrics": {
     "A_p_l": {
-      "activity_ratio": 0.00032535608779875796,
+      "activity_ratio": 0.00024893779077893134,
       "count_ext_msg": {
         "_discovery_A_p_l": 7,
         "r_u": 1
@@ -15,7 +15,7 @@
       }
     },
     "A_p_u": {
-      "activity_ratio": 0.003826142309365927,
+      "activity_ratio": 0.0025544986865303028,
       "count_ext_msg": {
         "_discovery_A_p_u": 7,
         "r_l": 2
@@ -29,7 +29,7 @@
       }
     },
     "A_q_l": {
-      "activity_ratio": 0.016873566506122248,
+      "activity_ratio": 0.014935715342532786,
       "count_ext_msg": {
         "_discovery_A_q_l": 7,
         "p_l": 2
@@ -43,7 +43,7 @@
       }
     },
     "A_q_u": {
-      "activity_ratio": 0.10008523892982195,
+      "activity_ratio": 0.26645775806549893,
       "count_ext_msg": {
         "_discovery_A_q_u": 7,
         "p_u": 2
@@ -57,7 +57,7 @@
       }
     },
     "A_r_l": {
-      "activity_ratio": 0.7566777130042392,
+      "activity_ratio": 0.6665773349068771,
       "count_ext_msg": {
         "_discovery_A_r_l": 7,
         "q_u": 2
@@ -71,7 +71,7 @@
       }
     },
     "A_r_u": {
-      "activity_ratio": 0.24362506305825654,
+      "activity_ratio": 0.09820535784234788,
       "count_ext_msg": {
         "_discovery_A_r_u": 7,
         "q_l": 1
@@ -98,6 +98,6 @@
   "msg_count": 52,
   "msg_size": 5636,
   "status": "FINISHED",
-  "time": 2.3969985480034666,
+  "time": 2.5785407249968557,
   "violation": 0
 }

@@ -185,7 +185,7 @@ def run_dpop(mistnu, agent_cycles, map_contracts, inputFile):
     subprocess.call(bash_command)
 
     result = json.load(open(file_path +".json"))
-    result["solved"] = False if int(result["cost"]) > 100000 else True
+    print("Failed as it did not satisfy a constraints") if int(result["cost"]) > 100000 else print("A repair has been found !")
 
 
 def run_syncbb(mistnu, agent_cycles, map_contracts, inputFile):
@@ -204,5 +204,5 @@ def run_syncbb(mistnu, agent_cycles, map_contracts, inputFile):
     subprocess.call(bash_command)
 
     result = json.load(open(file_path +".json"))
-    result["solved"] = False if int(result["cost"]) > 100000 else True
+    print("Failed as it did not satisfy a constraints") if int(result["cost"]) > 100000 else print("A repair has been found !")
 
