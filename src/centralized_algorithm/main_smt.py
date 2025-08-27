@@ -2,9 +2,9 @@ import copy
 import itertools
 
 
-from src.optimization_functions import *
+from optimization_functions import *
 
-from src.structures import *
+from structures import *
 
 
 def encode_process(B):

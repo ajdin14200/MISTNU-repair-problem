@@ -1,7 +1,7 @@
 import copy
 import sys
-sys.path.insert(0, '../../')
-from src.structures import *
+sys.path.insert(0, '../../../')
+from structures import *
 
 
 

@@ -3,12 +3,12 @@ from pysmt.shortcuts import *
 from pysmt.optimization.goal import MaximizationGoal, MinimizationGoal
 
 import sys
-sys.path.insert(0, '..')
+sys.path.insert(0, '../')
 from structures import *
 
 sys.path.append('checking_algorithm')
-from wc_checking_algorithm import *
-from src.optimization_functions import *
+from checking_algorithm.wc_checking_algorithm import *
+from optimization_functions import *
 
 
 

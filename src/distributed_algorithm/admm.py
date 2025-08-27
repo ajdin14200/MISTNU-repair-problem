@@ -73,7 +73,7 @@ class GeneralFormConsensusOptimizationProblem:
         return len(self.costs[i])
 
 
-def compute_min_path_formula(contracts, map_contracts,contracts_variables):
+def compute_min_path_formula(contracts, map_contracts,contracts_variables, agent_variables_view, cycle_variables):
     sum = []
     for contingent in contracts:
         if contingent.contract:
@@ -90,11 +90,13 @@ def compute_min_path_formula(contracts, map_contracts,contracts_variables):
             else:
                 contract_variable = contracts_variables[map_contracts[source+"_"+dest]][1]
                 sum.append(u - contract_variable)
+            agent_variables_view.add(contract_variable)
+            cycle_variables.add(contract_variable)
 
     return sum
 
 
-def compute_max_path_formula(contracts, map_contracts,contracts_variables):
+def compute_max_path_formula(contracts, map_contracts,contracts_variables, agent_variables_view, cycle_variables):
     sum = []
     for contingent in contracts:
         if contingent.contract:
@@ -113,30 +115,35 @@ def compute_max_path_formula(contracts, map_contracts,contracts_variables):
             else:
                 contract_variable = contracts_variables[map_contracts[source+"_"+dest]][0]
                 sum.append(contract_variable - l)
+            agent_variables_view.add(contract_variable)
+            cycle_variables.add(contract_variable)
+
 
 
     return sum
 
 
-def compute_cycle_formula(cycle, map_contracts,contracts_variables):
+def compute_cycle_formula(cycle, map_contracts,contracts_variables, agent_variables_view):
     min_p = cycle[0]
     max_p = cycle[1]
+
+    cycle_variables = set()
 
     flexibility = min_p[0] - max_p[0]
 
     # min_path
-    min_formula = compute_min_path_formula(min_p[1], map_contracts,contracts_variables)
-    max_formula = compute_max_path_formula(max_p[1], map_contracts,contracts_variables)
+    min_formula = compute_min_path_formula(min_p[1], map_contracts,contracts_variables, agent_variables_view, cycle_variables)
+    max_formula = compute_max_path_formula(max_p[1], map_contracts,contracts_variables, agent_variables_view, cycle_variables)
     sum_cycle = sum(min_formula + max_formula)
-    return sum_cycle >= flexibility
+    return sum_cycle >= flexibility, cycle_variables
 
 
-def compute_agent_cycles_constraint(cycles, map_contracts,contracts_variables):
+def compute_agent_cycles_constraint(cycles, map_contracts,contracts_variables, agent_variables_view):
     # here we need to identify the constraint that are alone to prune the domain
     constraints = []
     for cycle in cycles:
-        cycle_formula= compute_cycle_formula(cycle, map_contracts,contracts_variables)
-        constraints.append(cycle_formula)
+        cycle_formula, cycle_variables = compute_cycle_formula(cycle, map_contracts,contracts_variables, agent_variables_view)
+        constraints.append((cycle_formula, cycle_variables))
 
 
     return constraints  # I return the formula itself
@@ -220,6 +227,19 @@ def get_variables_bounds(contract_variables, B):
         variables_bounds[variable_tuple[1]] = bounds[0]
 
     return variables_bounds
+
+
+def get_variables_constraints(variables_bounds, map_variables_owner):
+    variables_constraints = {}
+    for agent, variables in map_variables_owner.items():
+        for (l,u) in variables:
+            lowerBound = variables_bounds[l][0]
+            upperBound = variables_bounds[u][1]
+            variables_constraints[agent] = [lowerBound <= l, l <= u, u <= upperBound]
+    return variables_constraints
+
+
+
 def run_admm(mistnu, agent_cycles, map_contracts):
 
     #print("agent cycles", agent_cycles)
@@ -227,25 +247,35 @@ def run_admm(mistnu, agent_cycles, map_contracts):
 
     contract_variables, map_variables_owner = create_variables(mistnu)
 
+    print("variables ", contract_variables)
+    print("variables owner ", map_variables_owner)
     variables_bounds = get_variables_bounds(contract_variables, mistnu.B)
-    # print(variables)
-    # print(map_variables_owner)
-    #print(variables_bounds)
+
+    print(" variable bounds ",variables_bounds)
 
     functions = get_agents_functions(map_variables_owner)
     print(functions)
-
     agent_cycles, list_involved_contract = share_cycle(agent_cycles, map_contracts, mistnu.readers, map_contract_owner)
-    print(agent_cycles['A_0'])
-    print(list_involved_contract)
+    #print(agent_cycles['A_0'])
+    print("involved ",list_involved_contract)
 
-
+    agents_formula = {}
     for agent, cycles in agent_cycles.items():
-        print(compute_agent_cycles_constraint(cycles, map_contracts, contract_variables))
+        agent_variables_view = set()
+        agent_cycles_constraints = compute_agent_cycles_constraint(cycles, map_contracts, contract_variables, agent_variables_view)
+        agents_formula[agent] = (agent_cycles_constraints, agent_variables_view)
 
+    print("agent cycles formula ",agents_formula)
 
-    nb_agents = len(mistnu.agents)
-    proximal_solvers = []
+    variables_constraints = get_variables_constraints(variables_bounds, map_variables_owner)
+
+    print("variables constraints ",variables_constraints)
+
+    proximal_solver = {}
+    for agent, f in functions.items():
+        proximal_solver[agent] = Problem(Minimize(f))
+
+    print(proximal_solver)
 
 
 
@@ -269,21 +299,3 @@ def run_admm(mistnu, agent_cycles, map_contracts):
 
     exit(0)
 
-    map_contract_owner = create_map_contracts_owners(mas.owners)
-
-
-    contracts_variables, agent_variables, variables_bounds  = create_contracts_variables(mas.B, mas.owners)
-
-    agent_cycles, list_involved_contract = share_cycle(agent_cycles, map_contracts, mas.readers, map_contract_owner)
-
-
-
-    agent_shared_cycles, single_agent_cycles = sort_cycles(agent_cycles)
-    set_variables_bounds(single_agent_cycles, mas.B, map_contracts, contracts_variables, variables_bounds)
-
-    rank = compute_agent_ranking(agent_cycles, map_contracts, contracts_variables)
-
-
-    assignement = run_synchronous_backtracking(variables_bounds, agent_cycles, map_contracts, contracts_variables, rank, map_contract_owner)
-    print("No solution exist !!!!") if len(assignement) == 0 else print("A solution exist ! The solution is : ", assignement)
-    return False if len(assignement) == 0 else True
