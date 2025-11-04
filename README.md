@@ -44,13 +44,14 @@ python3 ./main --inputFile ../benchmark/demofile_WC.txt --solver SMT_WC --optim 
 
 # Collaborators
 
-- Ajdin Sumic
-- Roberto Posenato
-- Thierry Vidal
-- Carlo Combi
-- Frédéric Maris
-- Andrea Micheli
-- Alessandro Cimatti
+- Ajdin Sumic (ONERA, Toulouse, France)
+- Roberto Posenato (University of Verona, Verona, Italy)
+- Thierry Vidal (LAAS, Toulouse, France)
+- Carlo Combi (University of Verona, Verona, Italy)
+- Frédéric Maris (IRIT, Toulouse, France)
+- Andrea Micheli (FBK, Trento, Italy)
+- Alessandro Cimatti (FBK, Trento, Italy)
+- Gauthier Picard (ONERA, Toulouse, France)
 
 
 
